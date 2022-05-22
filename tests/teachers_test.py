@@ -1,3 +1,6 @@
+from urllib import response
+
+
 def test_get_assignments_teacher_1(client, h_teacher_1):
     response = client.get(
         '/teacher/assignments',
@@ -100,3 +103,55 @@ def test_grade_assignment_draft_assignment(client, h_teacher_1):
     data = response.json
 
     assert data['error'] == 'FyleError'
+
+def test_grade_assignment_null_data(client, h_teacher_1):
+    """
+    failure case: If value of field are null
+    """
+    response = client.post(
+        '/teacher/assignments/grade',
+        headers=h_teacher_1,
+        json={
+            "id": None,
+            "grade": 'A'
+        }
+    )
+
+    assert response.status_code == 400
+    data = response.json
+
+    assert data['error'] == 'ValidationError'
+
+def test_grade_assignment_empty_header(client, h_teacher_1):
+    """
+    failure case: header is not provided
+    """
+    response = client.post(
+        '/teacher/assignments/grade',
+        headers={}
+        , json={
+            "id": 2,
+            "grade": "A"
+        }
+    )
+
+    assert response.status_code == 401
+    data = response.json
+
+    assert data['error'] == 'FyleError'
+
+def test_grade_assignment(client, h_teacher_1):
+    response = client.post(
+        '/teacher/assignments/grade',
+        headers=h_teacher_1,
+        json={
+            "id": 1,
+            "grade": "A"
+        }
+    )
+
+    assert response.status_code == 200
+    json = response.json
+    assert json["data"]["grade"] == "A"
+    assert json["data"]["state"] == "GRADED"
+    assert json["data"]["teacher_id"] == 1
